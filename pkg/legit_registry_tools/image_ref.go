@@ -45,6 +45,10 @@ func (i ImageRef) Ref() string {
 	return ref
 }
 
+func (i ImageRef) Tagged() bool {
+	return i.Tag != ""
+}
+
 const (
 	digestSeparator = "@"
 	tagSeparator    = ":"
