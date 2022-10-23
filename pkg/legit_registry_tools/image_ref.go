@@ -33,7 +33,7 @@ func NewImageRef(ref string) (*ImageRef, error) {
 	}, nil
 }
 
-func (i ImageRef) Ref() string {
+func (i *ImageRef) Ref() string {
 	ref := i.Name
 	if i.Tag != "" {
 		ref = fmt.Sprintf("%v:%v", ref, i.Tag)
@@ -45,7 +45,13 @@ func (i ImageRef) Ref() string {
 	return ref
 }
 
-func (i ImageRef) Tagged() bool {
+func (i *ImageRef) PureDigest() string {
+	const SHA_SEPARATOR = ":"
+	_, pure, _ := strings.Cut(i.Digest, SHA_SEPARATOR)
+	return pure
+}
+
+func (i *ImageRef) Tagged() bool {
 	return i.Tag != ""
 }
 
@@ -60,33 +66,23 @@ func HasDigest(ref string) bool {
 func HasTag(ref string) bool {
 	return strings.Contains(ref, tagSeparator)
 }
-func SplitByDigest(ref string) (string, string) {
-	parts := strings.Split(ref, digestSeparator)
-	return parts[0], parts[1]
+func SplitByDigest(ref string) (string, string, bool) {
+	return strings.Cut(ref, digestSeparator)
 }
-func SplitByTag(ref string) (string, string) {
-	parts := strings.Split(ref, tagSeparator)
-	return parts[0], parts[1]
+func SplitByTag(ref string) (string, string, bool) {
+	return strings.Cut(ref, tagSeparator)
 }
 
 func getImageWithDigest(ref string) (subRef, digest string) {
-	if HasDigest(ref) {
-		subRef, digest = SplitByDigest(ref)
-	} else {
-		subRef = ref
-	}
-
+	subRef, digest, _ = SplitByDigest(ref)
 	return
 }
 
 func getImageWithTag(ref string, hasDigest bool) (subRef, tag string) {
-	if HasTag(ref) {
-		subRef, tag = SplitByTag(ref)
-	} else {
-		subRef = ref
-		if !hasDigest {
-			tag = "latest" // default when there is no tag & digest
-		}
+	var hasTag bool
+	subRef, tag, hasTag = SplitByTag(ref)
+	if !hasTag && !hasDigest {
+		tag = "latest" // default when there is no tag & digest
 	}
 
 	return
