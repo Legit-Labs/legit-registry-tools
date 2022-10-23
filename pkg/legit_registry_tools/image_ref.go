@@ -52,18 +52,18 @@ func (i *ImageRef) Ref() string {
 	return ref
 }
 
-func (i *ImageRef) DigestToShaValue() string {
-	prefix, pure, found := strings.Cut(i.Digest, shaSeparator)
+func (i *ImageRef) Tagged() bool {
+	return i.Tag != ""
+}
+
+func DigestToShaValue(digest string) string {
+	prefix, pure, found := strings.Cut(digest, shaSeparator)
 	if found {
 		return pure
 	} else {
 		// already stripped of the prefix, so the prefix is actually the value
 		return prefix
 	}
-}
-
-func (i *ImageRef) Tagged() bool {
-	return i.Tag != ""
 }
 
 func DigestFromShaValue(shaValue string) string {
