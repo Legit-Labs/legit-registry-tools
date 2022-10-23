@@ -7,6 +7,13 @@ import (
 	"github.com/google/go-containerregistry/pkg/crane"
 )
 
+const (
+	shaPrefix       = "sha256"
+	shaSeparator    = ":"
+	digestSeparator = "@"
+	tagSeparator    = ":"
+)
+
 type ImageRef struct {
 	Name   string
 	Tag    string
@@ -45,9 +52,8 @@ func (i *ImageRef) Ref() string {
 	return ref
 }
 
-func (i *ImageRef) PureDigest() string {
-	const SHA_SEPARATOR = ":"
-	_, pure, _ := strings.Cut(i.Digest, SHA_SEPARATOR)
+func (i *ImageRef) DigestToShaValue() string {
+	_, pure, _ := strings.Cut(i.Digest, shaSeparator)
 	return pure
 }
 
@@ -55,10 +61,9 @@ func (i *ImageRef) Tagged() bool {
 	return i.Tag != ""
 }
 
-const (
-	digestSeparator = "@"
-	tagSeparator    = ":"
-)
+func DigestFromShaValue(shaValue string) string {
+	return fmt.Sprintf("%v%v%v", shaPrefix, shaSeparator, shaValue)
+}
 
 func HasDigest(ref string) bool {
 	return strings.Contains(ref, digestSeparator)
