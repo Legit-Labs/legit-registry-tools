@@ -7,7 +7,10 @@ import (
 
 func TestImageRef(t *testing.T) {
 	assert := func(ref, name, tag, digest, label string) {
-		_name, _tag, _digest := GetImageRef(ref)
+		_name, _tag, _digest, err := GetImageRef(ref)
+		if err != nil {
+			t.Fatalf("failed to get image ref: %v", err)
+		}
 		if name != _name || tag != _tag || digest != _digest {
 			t.Fatalf("failed to parse image with %v [%v,%v,%v]", label, _name, _tag, _digest)
 		}

@@ -46,16 +46,15 @@ func getImageWithTag(ref string, hasDigest bool) (subRef, tag string) {
 	return
 }
 
-func GetImageRef(ref string) (name, tag, digest string) {
+func GetImageRef(ref string) (name, tag, digest string, err error) {
 	ref, digest = getImageWithDigest(ref)
 	hasDigest := digest != ""
 	name, tag = getImageWithTag(ref, hasDigest)
 
 	if !hasDigest {
-		var err error
 		digest, err = crane.Digest(ref)
 		if err != nil {
-			digest = ""
+			return
 		}
 	}
 
