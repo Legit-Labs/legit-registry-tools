@@ -13,18 +13,61 @@ type ImageRef struct {
 	Digest string
 }
 
-func (i ImageRef) Ref() string {
-	if i.Digest != "" {
-		return fmt.Sprintf("%v@%v", i.Name, i.Digest)
-	} else {
-		return fmt.Sprintf("%v:%v", i.Name, i.Tag)
+func NewImageRef(ref string) (*ImageRef, error) {
+	ref, digest := getImageWithDigest(ref)
+	hasDigest := digest != ""
+	name, tag := getImageWithTag(ref, hasDigest)
+
+	if !hasDigest {
+		var err error
+		digest, err = crane.Digest(ref)
+		if err != nil {
+			return nil, err
+		}
 	}
+
+	return &ImageRef{
+		Name:   name,
+		Tag:    tag,
+		Digest: digest,
+	}, nil
+}
+
+func (i ImageRef) Ref() string {
+	ref := i.Name
+	if i.Tag != "" {
+		ref = fmt.Sprintf("%v:%v", ref, i.Tag)
+	}
+	if i.Digest != "" {
+		ref = fmt.Sprintf("%v@%v", ref, i.Digest)
+	}
+
+	return ref
+}
+
+const (
+	digestSeparator = "@"
+	tagSeparator    = ":"
+)
+
+func HasDigest(ref string) bool {
+	return strings.Contains(ref, digestSeparator)
+}
+func HasTag(ref string) bool {
+	return strings.Contains(ref, tagSeparator)
+}
+func SplitByDigest(ref string) (string, string) {
+	parts := strings.Split(ref, digestSeparator)
+	return parts[0], parts[1]
+}
+func SplitByTag(ref string) (string, string) {
+	parts := strings.Split(ref, tagSeparator)
+	return parts[0], parts[1]
 }
 
 func getImageWithDigest(ref string) (subRef, digest string) {
-	if strings.Contains(ref, "@") {
-		parts := strings.Split(ref, "@")
-		subRef, digest = parts[0], parts[1]
+	if HasDigest(ref) {
+		subRef, digest = SplitByDigest(ref)
 	} else {
 		subRef = ref
 	}
@@ -33,28 +76,12 @@ func getImageWithDigest(ref string) (subRef, digest string) {
 }
 
 func getImageWithTag(ref string, hasDigest bool) (subRef, tag string) {
-	if strings.Contains(ref, ":") {
-		parts := strings.Split(ref, ":")
-		subRef, tag = parts[0], parts[1]
+	if HasTag(ref) {
+		subRef, tag = SplitByTag(ref)
 	} else {
 		subRef = ref
 		if !hasDigest {
 			tag = "latest" // default when there is no tag & digest
-		}
-	}
-
-	return
-}
-
-func GetImageRef(ref string) (name, tag, digest string, err error) {
-	ref, digest = getImageWithDigest(ref)
-	hasDigest := digest != ""
-	name, tag = getImageWithTag(ref, hasDigest)
-
-	if !hasDigest {
-		digest, err = crane.Digest(ref)
-		if err != nil {
-			return
 		}
 	}
 

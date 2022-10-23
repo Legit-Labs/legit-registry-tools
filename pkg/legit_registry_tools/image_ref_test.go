@@ -2,18 +2,31 @@ package legit_registry_tools
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 )
 
 func TestImageRef(t *testing.T) {
 	assert := func(ref, name, tag, digest, label string) {
-		_name, _tag, _digest, err := GetImageRef(ref)
+		imageRef, err := NewImageRef(ref)
 		if err != nil {
 			t.Fatalf("failed to get image ref: %v", err)
 		}
-		if name != _name || tag != _tag || digest != _digest {
-			t.Fatalf("failed to parse image with %v [%v,%v,%v]", label, _name, _tag, _digest)
+		expected := ImageRef{Name: name, Tag: tag, Digest: digest}
+		if *imageRef != expected {
+			t.Fatalf("failed to parse image with %v [%v]", label, imageRef)
 		}
+
+		if HasDigest(ref) {
+			if ref != imageRef.Ref() {
+				t.Fatalf("exact ref mismatch %v [%v != %v]", label, ref, imageRef.Ref())
+			}
+		} else {
+			if !strings.HasPrefix(imageRef.Ref(), ref) {
+				t.Fatalf("partial ref mismatch %v [%v doesn't start with %v]", label, imageRef.Ref(), ref)
+			}
+		}
+
 	}
 
 	assert("image:tag@digest", "image", "tag", "digest", "both tag and digest")
